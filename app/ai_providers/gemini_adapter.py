@@ -226,5 +226,3 @@ class GeminiAdapter:
             return validated if isinstance(validated, dict) else ui_json
         except json.JSONDecodeError:
             return ui_json
-
-

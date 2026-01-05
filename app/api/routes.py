@@ -156,4 +156,3 @@ async def deploy_job(
         "message": "Deployment started",
         "bundle_path": bundle_artifact.file_path
     }
-
