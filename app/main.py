@@ -1,37 +1,60 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.routes import api_router
 from app.core.config import settings
-from app.adapters.database import engine
-from app import models
+from app.adapters.database import engine, Base
+from app.models.portfolio import Portfolio 
 
-models.Portfolio.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
 
-def get_application() -> FastAPI:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
 
-    _app = FastAPI(
-        title=settings.PROJECT_NAME,
-        version="1.0.0",
-        description="AI: Transforming resumes into portfolios."
-    )
+    """
+    Application lifespan handler.
 
-    _app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    Responsibilities:
+    - Create DB tables at startup (DEV MODE)
+    - Dispose DB engine on shutdown
+    """
 
-    _app.include_router(api_router, prefix=settings.API_V1_STR)
+    logger.info("Showcase AI: Application starting up")
 
-    return _app
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-app = get_application()
+    yield
 
-@app.get("/", tags=["Health Check"])
+    logger.info("Showcase AI: Application shutting down")
+
+    await engine.dispose()
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version="1.0.0",
+    description="Showcase AI: Transforming resumes into stunning portfolios.",
+    debug=settings.DEBUG,
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router, prefix=settings.API_V1_STR)
+
+@app.get("/health", include_in_schema=False)
 async def health_check():
     return {
         "status": "online",
-        "message": "Welcome AI. Your portfolio is one upload away."
+        "engine": "Gemini-Vision-v1",
+        "version": "1.0.0"
     }

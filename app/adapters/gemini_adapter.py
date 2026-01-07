@@ -314,3 +314,26 @@ class GeminiAdapter:
             raise GeminiResponseParseError(
                 f"Invalid response structure: {type(exc).__name__}"
             ) from exc
+        
+
+
+
+    #Vision model for OCR if needed
+    async def vision_to_text(self, image_bytes: bytes, prompt: Optional[str] = None) -> str:
+        """
+        Optional OCR capability.
+        Only used if vision functionality is explicitly required.
+        """
+        if not prompt:
+            prompt = "Extract all text from this image and maintain the formatting."
+
+        try:
+            # Using the SDK's native async call
+            response = await self.vision_model.generate_content_async(
+                [prompt, {'mime_type': 'image/jpeg', 'data': image_bytes}]
+            )
+            return response.text.strip() if response.text else ""
+        except Exception as e:
+            logger.error(f"Vision OCR failed: {e}")
+            # We raise a standard error so the rest of the app handles it gracefully
+            raise GeminiError(f"OCR failed: {str(e)}")
