@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound";
 
 // 🛡️ New Auth Imports
 import Login from "./pages/Login"; 
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 
 const queryClient = new QueryClient();
 
